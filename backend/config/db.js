@@ -1,23 +1,23 @@
 const { Pool } = require("pg");
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false, // Required for Render PostgreSQL
-  },
+  ssl: isProduction
+    ? { rejectUnauthorized: false } // Render
+    : false, // Local PostgreSQL
 });
 
-// When new connection is created
+// Logs
 pool.on("connect", () => {
   console.log("📦 PostgreSQL Connected");
 });
 
-// Handle unexpected errors
 pool.on("error", (err) => {
   console.error("❌ Unexpected DB Error:", err);
 });
 
-// Function to test DB connection
 const connectDB = async () => {
   try {
     const client = await pool.connect();
