@@ -1,0 +1,188 @@
+import { useEffect, useState } from "react";
+import axios from "axios";
+import StatusIcon from "../../../components/StatusIcon";
+
+export default function LeaveAccept() {
+  const [data, setData] = useState([]);
+  const [message, setMessage] = useState("");
+
+  // =========================
+  // 📄 FETCH LEAVES (FIXED)
+  // =========================
+  useEffect(() => {
+    let ignore = false;
+
+    const fetchData = async () => {
+      try {
+        const res = await axios.get(
+          "http://127.0.0.1:8000/academics/leaves"
+        );
+
+        if (!ignore) {
+          setData(res.data);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  // =========================
+  // 🔄 REFRESH FUNCTION
+  // =========================
+  const refreshData = async () => {
+    try {
+      const res = await axios.get(
+        "http://127.0.0.1:8000/academics/leaves"
+      );
+      setData(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // =========================
+  // ✅ ACCEPT
+  // =========================
+  const handleAccept = async (id) => {
+    try {
+      await axios.put(
+        `http://127.0.0.1:8000/academics/leaves/${id}/accept`
+      );
+
+      setMessage("✅ Leave accepted");
+      refreshData();
+    } catch (err) {
+      console.error(err);
+      setMessage("❌ Failed to accept leave");
+    }
+  };
+
+  // =========================
+  // ❌ REJECT
+  // =========================
+  const handleReject = async (id) => {
+    try {
+      await axios.put(
+        `http://127.0.0.1:8000/academics/leaves/${id}/reject`
+      );
+
+      setMessage("❌ Leave rejected");
+      refreshData();
+    } catch (err) {
+      console.error(err);
+      setMessage("❌ Failed to reject leave");
+    }
+  };
+
+  return (
+    <div style={styles.container}>
+      <h2>📄 Leave Approval</h2>
+
+      {message && <p style={styles.message}>{message}</p>}
+
+      <table style={styles.table}>
+        <thead>
+          <tr>
+            <th>Faculty</th>
+            <th>From</th>
+            <th>To</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {data.length === 0 ? (
+            <tr>
+              <td colSpan="6" style={styles.noData}>
+                No leave requests
+              </td>
+            </tr>
+          ) : (
+            data.map((item) => (
+              <tr key={item.id}>
+                <td>{item.faculty_name}</td>
+                <td>{item.from_date}</td>
+                <td>{item.to_date}</td>
+                <td>{item.reason}</td>
+
+                <td>
+                  <StatusIcon status={item.status === "approved"} />
+                </td>
+
+                <td>
+                  {item.status === "pending" && (
+                    <>
+                      <button
+                        onClick={() => handleAccept(item.id)}
+                        style={styles.acceptBtn}
+                      >
+                        Accept
+                      </button>
+
+                      <button
+                        onClick={() => handleReject(item.id)}
+                        style={styles.rejectBtn}
+                      >
+                        Reject
+                      </button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+
+// =========================
+// 🎨 STYLES
+// =========================
+const styles = {
+  container: { padding: "20px" },
+
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+  },
+
+  acceptBtn: {
+    marginRight: "5px",
+    padding: "5px 10px",
+    backgroundColor: "#22c55e",
+    color: "#fff",
+    border: "none",
+    cursor: "pointer",
+  },
+
+  rejectBtn: {
+    padding: "5px 10px",
+    backgroundColor: "#ef4444",
+    color: "#fff",
+    border: "none",
+    cursor: "pointer",
+  },
+
+  noData: {
+    textAlign: "center",
+    padding: "20px",
+    color: "#777",
+  },
+
+  message: {
+    marginBottom: "10px",
+    fontWeight: "bold",
+  },
+};

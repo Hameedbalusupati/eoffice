@@ -1,0 +1,15 @@
+.status-icon {
+  font-size: 18px;
+  font-weight: bold;
+  margin-left: 8px;
+}
+
+/* ✅ Completed */
+.status-icon.completed {
+  color: #22c55e; /* green */
+}
+
+/* ❌ Pending */
+.status-icon.pending {
+  color: #ef4444; /* red */
+}
