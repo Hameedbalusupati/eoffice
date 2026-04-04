@@ -3,10 +3,15 @@
 import axios from "axios";
 
 // =========================
-// 🌐 BASE URL FROM ENV
+// 🌐 BASE URL (SAFE)
 // =========================
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://eoffice-97mv.onrender.com"; // fallback
 
+// =========================
+// 🚀 AXIOS INSTANCE
+// =========================
 const API = axios.create({
   baseURL: BASE_URL,
   headers: {
@@ -20,10 +25,14 @@ const API = axios.create({
 API.interceptors.request.use(
   (config) => {
     try {
-      const user = JSON.parse(localStorage.getItem("user"));
+      const rawUser = localStorage.getItem("user");
+      const user = rawUser ? JSON.parse(rawUser) : null;
 
-      if (user && user.access_token) {
-        config.headers.Authorization = `Bearer ${user.access_token}`;
+      // ✅ Handle both cases
+      const token = user?.access_token || user?.token;
+
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
       }
     } catch (error) {
       console.error("Token parse error:", error);
@@ -40,16 +49,28 @@ API.interceptors.request.use(
 API.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error("API Error:", error.response?.data || error.message);
+    const message =
+      error.response?.data?.detail ||
+      error.response?.data ||
+      error.message;
+
+    console.error("API Error:", message);
 
     // 🔥 Auto logout if unauthorized
-    if (error.response && error.response.status === 401) {
+    if (error.response?.status === 401) {
       localStorage.removeItem("user");
-      window.location.href = "/";
+
+      // prevent infinite reload loop
+      if (window.location.pathname !== "/") {
+        window.location.href = "/";
+      }
     }
 
     return Promise.reject(error);
   }
 );
 
+// =========================
+// 📦 EXPORT
+// =========================
 export default API;

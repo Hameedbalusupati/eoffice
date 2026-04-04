@@ -1,10 +1,3 @@
-"""
-config/settings.py
-
-👉 Handles all environment variables (.env)
-👉 Compatible with Pydantic v2
-👉 Prevents extra field errors
-"""
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -26,15 +19,16 @@ class Settings(BaseSettings):
     # 🌐 APP SETTINGS
     # =========================
     APP_NAME: str = "E-Office Backend"
-    DEBUG: bool = True
-    APP_ENV: str = "development"   # ✅ FIX: added
+    DEBUG: bool = False              # ✅ FIX: production default
+    APP_ENV: str = "production"      # ✅ FIX
 
     # =========================
     # ⚙️ CONFIG (Pydantic v2)
     # =========================
     model_config = SettingsConfigDict(
-        env_file=".env",
-        extra="ignore"   # 🔥 FIX: ignore extra fields like EMAIL, SMS, etc.
+        env_file=".env",             # ✅ used locally only
+        env_file_encoding="utf-8",
+        extra="ignore"               # ✅ ignore extra vars safely
     )
 
 
