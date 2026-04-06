@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 // COMPONENTS
 import Navbar from "./components/Navbar";
 
-// 🌐 PAGES
+// PAGES
 import Dashboard from "./pages/Dashboard";
 
 // Academics
@@ -19,8 +19,7 @@ import StudentPerformance from "./pages/placements/StudentPerformance";
 // =========================
 const getUser = () => {
   try {
-    const user = JSON.parse(localStorage.getItem("user"));
-    return user || null;
+    return JSON.parse(localStorage.getItem("user"));
   } catch {
     return null;
   }
@@ -32,7 +31,7 @@ const getUser = () => {
 const ProtectedRoute = ({ children }) => {
   const user = getUser();
 
-  // ✅ SIMPLE CHECK (DON’T OVERCHECK TOKEN)
+  // Redirect to login if no user
   if (!user) {
     return <Navigate to="/" replace />;
   }
@@ -47,7 +46,7 @@ function App() {
   const location = useLocation();
   const user = getUser();
 
-  // ✅ hide navbar only on login page
+  // Hide navbar only on login page
   const hideNavbar = location.pathname === "/" && !user;
 
   return (
@@ -55,19 +54,21 @@ function App() {
       {!hideNavbar && <Navbar />}
 
       <Routes>
-        {/* ================= LOGIN / HOME ================= */}
+        {/* ================= LOGIN PAGE ================= */}
         <Route
           path="/"
           element={
             user ? (
-              <Navigate to="/academics/manage" replace />
+              <Navigate to="/dashboard" replace />
             ) : (
-              <Dashboard />
+              <h2 style={{ textAlign: "center", marginTop: "50px" }}>
+                Login Page (Add your login UI here)
+              </h2>
             )
           }
         />
 
-        {/* ================= DASHBOARD (SAFE ROUTE) ================= */}
+        {/* ================= DASHBOARD ================= */}
         <Route
           path="/dashboard"
           element={

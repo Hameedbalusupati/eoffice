@@ -1,25 +1,20 @@
 import React from "react";
-import { createRoot } from "react-dom/client";
+import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import "./index.css";
 import App from "./App.jsx";
+import "./index.css";
 
-// =========================
-// 🔐 SAFE ROOT ELEMENT
-// =========================
+// Get root element
 const rootElement = document.getElementById("root");
 
+// Safety check
 if (!rootElement) {
   throw new Error("Root element not found");
 }
 
-// =========================
-// 🚀 RENDER APP
-// =========================
-createRoot(rootElement).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </React.StrictMode>
+// Render React App
+ReactDOM.createRoot(rootElement).render(
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
 );
