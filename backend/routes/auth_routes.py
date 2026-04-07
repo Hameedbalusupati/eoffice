@@ -1,15 +1,14 @@
 """
 routes/auth_routes.py
 
-👉 Handles authentication (Register + Login)
-👉 Uses JWT for secure login
-👉 Initializes activities after registration
+✅ FINAL FIXED VERSION (NO 500 ERROR)
 """
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from jose import jwt
+from pydantic import BaseModel
 
 from database.session import get_db
 from models.user import User
@@ -18,7 +17,23 @@ from utils.auth import hash_password, verify_password
 from config.settings import settings
 from constants.activities import initialize_faculty_activities
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+# ✅ REMOVE prefix here
+router = APIRouter(tags=["Auth"])
+
+
+# =========================
+# 📦 REQUEST MODELS
+# =========================
+class RegisterRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+    role: str = "employee"
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
 
 
 # =========================
@@ -29,46 +44,40 @@ def create_access_token(data: dict, expires_delta: int = 60):
     expire = datetime.utcnow() + timedelta(minutes=expires_delta)
     to_encode.update({"exp": expire})
 
-    encoded_jwt = jwt.encode(
+    return jwt.encode(
         to_encode,
         settings.SECRET_KEY,
         algorithm=settings.ALGORITHM
     )
-    return encoded_jwt
 
 
 # =========================
 # 📝 REGISTER USER
 # =========================
 @router.post("/register")
-def register(
-    name: str,
-    email: str,
-    password: str,
-    role: str = "employee",
-    db: Session = Depends(get_db)
-):
-    # 🔍 Check if user exists
-    existing_user = db.query(User).filter(User.email == email).first()
+def register(data: RegisterRequest, db: Session = Depends(get_db)):
+
+    # 🔍 Check if exists
+    existing_user = db.query(User).filter(User.email == data.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
 
     # 🔐 Hash password
-    hashed_password = hash_password(password)
+    hashed_password = hash_password(data.password)
 
     # 👤 Create user
     new_user = User(
-        name=name,
-        email=email,
+        name=data.name,
+        email=data.email,
         password=hashed_password,
-        role=role
+        role=data.role
     )
 
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
-    # 🔥 Initialize activities (ALL ❌)
+    # 🔥 Initialize activities
     initialize_faculty_activities(db, new_user.id, Activity)
 
     return {
@@ -81,22 +90,16 @@ def register(
 # 🔐 LOGIN USER
 # =========================
 @router.post("/login")
-def login(
-    email: str,
-    password: str,
-    db: Session = Depends(get_db)
-):
-    # 🔍 Find user
-    user = db.query(User).filter(User.email == email).first()
+def login(data: LoginRequest, db: Session = Depends(get_db)):
+
+    user = db.query(User).filter(User.email == data.email).first()
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # 🔐 Verify password
-    if not verify_password(password, user.password):
+    if not verify_password(data.password, user.password):
         raise HTTPException(status_code=401, detail="Invalid password")
 
-    # 🔑 Create token
     access_token = create_access_token(
         data={
             "user_id": user.id,
@@ -120,10 +123,11 @@ def login(
 
 
 # =========================
-# 👤 GET CURRENT USER (OPTIONAL)
+# 👤 GET USER
 # =========================
 @router.get("/user/{user_id}")
 def get_user(user_id: int, db: Session = Depends(get_db)):
+
     user = db.query(User).filter(User.id == user_id).first()
 
     if not user:

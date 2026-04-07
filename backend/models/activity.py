@@ -8,11 +8,12 @@ class Activity(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    faculty_id = Column(Integer, ForeignKey("users.id"))
+    faculty_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     module = Column(String, nullable=False)
     activity_name = Column(String, nullable=False)
 
     status = Column(Boolean, default=False)
 
+    # 🔗 Relationship with User
     user = relationship("User", back_populates="activities")

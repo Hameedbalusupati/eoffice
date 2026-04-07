@@ -1,7 +1,7 @@
 """
 main.py
 
-✅ FINAL WORKING VERSION (Render + Vercel Ready)
+✅ FINAL CLEAN VERSION (Render + Vercel Ready)
 """
 
 from fastapi import FastAPI
@@ -32,19 +32,22 @@ app = FastAPI(
 
 
 # =========================
-# 🌍 CORS (SAFE FOR NOW)
+# 🌍 CORS CONFIG
 # =========================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # ✅ allow all (for debugging)
+    allow_origins=["*"],  # ✅ For now (change in production)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# 🔐 PRODUCTION (later replace with your Vercel URL)
+# allow_origins=["https://your-frontend.vercel.app"]
+
 
 # =========================
-# 🚀 STARTUP
+# 🚀 STARTUP EVENT
 # =========================
 @app.on_event("startup")
 def startup():
@@ -52,17 +55,17 @@ def startup():
 
     try:
         init_db(engine)
-        print("✅ Database connected")
+        print("✅ Database connected & tables created")
     except Exception as e:
         print("❌ Database error:", e)
 
 
 # =========================
-# 🔗 ROUTES (IMPORTANT FIX)
+# 🔗 ROUTES
 # =========================
 app.include_router(auth_router, prefix="/auth")
 
-# ✅ CRITICAL: activity router must NOT have internal prefix
+# ✅ IMPORTANT: activity router has NO internal prefix
 app.include_router(activity_router, prefix="/activity")
 
 app.include_router(academics_router, prefix="/academics")
@@ -85,7 +88,7 @@ def root():
 
 
 # =========================
-# ❤️ HEALTH
+# ❤️ HEALTH CHECK
 # =========================
 @app.get("/health")
 def health():
@@ -96,11 +99,13 @@ def health():
 
 
 # =========================
-# 🔍 DEBUG ROUTE (VERY IMPORTANT)
+# 🔍 DEBUG ROUTE
 # =========================
 @app.get("/test-activity")
 def test_activity():
-    return {"message": "Activity route working!"}
+    return {
+        "message": "Activity route working!"
+    }
 
 
 # =========================
@@ -108,4 +113,9 @@ def test_activity():
 # =========================
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",  # ✅ required for Render
+        port=8000,
+        reload=True
+    )
