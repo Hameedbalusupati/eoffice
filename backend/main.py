@@ -1,11 +1,7 @@
 """
 main.py
 
-👉 Entry point of FastAPI application
-👉 Handles:
-   - Database
-   - Routes
-   - CORS (Frontend connection)
+✅ FINAL WORKING VERSION (Render + Vercel Ready)
 """
 
 from fastapi import FastAPI
@@ -27,64 +23,54 @@ from routes.placements_routes import router as placements_router
 
 
 # =========================
-# 🚀 CREATE FASTAPI APP
+# 🚀 CREATE APP
 # =========================
 app = FastAPI(
     title="E-Office Backend API",
-    description="Full Backend for E-Office System with Activity Tracking ✔️❌",
     version="1.0.0"
 )
 
 
 # =========================
-# 🌍 CORS CONFIG (FIXED 🔥)
+# 🌍 CORS (SAFE FOR NOW)
 # =========================
-origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-
-    # 🔥 ADD YOUR VERCEL DOMAIN HERE
-    "https://your-frontend.vercel.app",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],  # ✅ allow all (for debugging)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 🔥 TEMP FIX (for testing only)
-# Uncomment this if still not working
-# allow_origins=["*"]
-
 
 # =========================
-# 🔥 STARTUP EVENT
+# 🚀 STARTUP
 # =========================
 @app.on_event("startup")
 def startup():
-    print("🚀 Starting E-Office Backend...")
+    print("🚀 Starting Backend...")
 
     try:
         init_db(engine)
-        print("✅ Database connected & tables created successfully")
+        print("✅ Database connected")
     except Exception as e:
-        print("❌ Database connection failed:", e)
+        print("❌ Database error:", e)
 
 
 # =========================
-# 🔗 INCLUDE ROUTES
+# 🔗 ROUTES (IMPORTANT FIX)
 # =========================
-app.include_router(auth_router, prefix="/auth", tags=["Auth"])
-app.include_router(activity_router, prefix="/activity", tags=["Activity"])
-app.include_router(academics_router, prefix="/academics", tags=["Academics"])
-app.include_router(correspondence_router, prefix="/correspondence", tags=["Correspondence"])
-app.include_router(employee_router, prefix="/employee", tags=["Employee"])
-app.include_router(examination_router, prefix="/examination", tags=["Examination"])
-app.include_router(library_router, prefix="/library", tags=["Library"])
-app.include_router(placements_router, prefix="/placements", tags=["Placements"])
+app.include_router(auth_router, prefix="/auth")
+
+# ✅ CRITICAL: activity router must NOT have internal prefix
+app.include_router(activity_router, prefix="/activity")
+
+app.include_router(academics_router, prefix="/academics")
+app.include_router(correspondence_router, prefix="/correspondence")
+app.include_router(employee_router, prefix="/employee")
+app.include_router(examination_router, prefix="/examination")
+app.include_router(library_router, prefix="/library")
+app.include_router(placements_router, prefix="/placements")
 
 
 # =========================
@@ -93,25 +79,33 @@ app.include_router(placements_router, prefix="/placements", tags=["Placements"])
 @app.get("/")
 def root():
     return {
-        "message": "🚀 E-Office Backend Running",
+        "message": "🚀 Backend is running",
         "status": "success"
     }
 
 
 # =========================
-# ❤️ HEALTH CHECK
+# ❤️ HEALTH
 # =========================
 @app.get("/health")
-def health_check():
+def health():
     return {
-        "status": "OK",
-        "message": "Server is running successfully"
+        "status": "ok",
+        "message": "Server is healthy"
     }
 
 
 # =========================
-# ▶️ RUN (LOCAL ONLY)
+# 🔍 DEBUG ROUTE (VERY IMPORTANT)
+# =========================
+@app.get("/test-activity")
+def test_activity():
+    return {"message": "Activity route working!"}
+
+
+# =========================
+# ▶️ LOCAL RUN
 # =========================
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

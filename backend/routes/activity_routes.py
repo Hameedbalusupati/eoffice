@@ -1,132 +1,119 @@
 """
 routes/activity_routes.py
 
-👉 Handles activity tracking (✔️ ❌)
-👉 Central API for all modules
+✅ FINAL WORKING VERSION (FIXED)
 """
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from pydantic import BaseModel
 
 from database.session import get_db
 from models.activity import Activity
-from constants.activities import ALL_ACTIVITIES
-from constants.activities import initialize_faculty_activities
+from constants.activities import ALL_ACTIVITIES, initialize_faculty_activities
 
-router = APIRouter(prefix="/activity", tags=["Activity"])
+# ✅ NO PREFIX HERE
+router = APIRouter()
+
+
+# =========================
+# 📦 REQUEST MODEL
+# =========================
+class ActivityUpdate(BaseModel):
+    faculty_id: int
+    module: str
+    activity_name: str
 
 
 # =========================
 # 📄 GET ALL ACTIVITIES
 # =========================
 @router.get("/")
-def get_all_activities(db: Session = Depends(get_db)):
-    activities = db.query(Activity).all()
-    return activities
+def get_all(db: Session = Depends(get_db)):
+    return db.query(Activity).all()
 
 
 # =========================
-# 👨‍🏫 GET ACTIVITIES BY FACULTY
+# 👨‍🏫 BY FACULTY
 # =========================
 @router.get("/faculty/{faculty_id}")
-def get_faculty_activities(faculty_id: int, db: Session = Depends(get_db)):
-    activities = db.query(Activity).filter(
+def get_by_faculty(faculty_id: int, db: Session = Depends(get_db)):
+    return db.query(Activity).filter(
         Activity.faculty_id == faculty_id
     ).all()
 
-    return activities
-
 
 # =========================
-# 📊 GET ACTIVITIES BY MODULE
+# 📊 BY MODULE
 # =========================
 @router.get("/faculty/{faculty_id}/{module}")
-def get_module_activities(
-    faculty_id: int,
-    module: str,
-    db: Session = Depends(get_db)
-):
-    activities = db.query(Activity).filter(
+def get_by_module(faculty_id: int, module: str, db: Session = Depends(get_db)):
+    return db.query(Activity).filter(
         Activity.faculty_id == faculty_id,
         Activity.module == module
     ).all()
 
-    return activities
-
 
 # =========================
-# ✔️ MARK ACTIVITY AS COMPLETED
+# ✔️ COMPLETE ACTIVITY
 # =========================
 @router.put("/complete")
-def mark_completed(
-    faculty_id: int,
-    module: str,
-    activity_name: str,
-    db: Session = Depends(get_db)
-):
+def complete(data: ActivityUpdate, db: Session = Depends(get_db)):
     activity = db.query(Activity).filter(
-        Activity.faculty_id == faculty_id,
-        Activity.module == module,
-        Activity.activity_name == activity_name
+        Activity.faculty_id == data.faculty_id,
+        Activity.module == data.module,
+        Activity.activity_name == data.activity_name
     ).first()
 
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
 
-    activity.status = True  # ✔️
+    activity.status = True
     db.commit()
     db.refresh(activity)
 
-    return {"message": "Activity marked as completed", "data": activity}
+    return {
+        "message": "Completed",
+        "data": activity
+    }
 
 
 # =========================
 # ❌ RESET ACTIVITY
 # =========================
 @router.put("/reset")
-def reset_activity(
-    faculty_id: int,
-    module: str,
-    activity_name: str,
-    db: Session = Depends(get_db)
-):
+def reset(data: ActivityUpdate, db: Session = Depends(get_db)):
     activity = db.query(Activity).filter(
-        Activity.faculty_id == faculty_id,
-        Activity.module == module,
-        Activity.activity_name == activity_name
+        Activity.faculty_id == data.faculty_id,
+        Activity.module == data.module,
+        Activity.activity_name == data.activity_name
     ).first()
 
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
 
-    activity.status = False  # ❌
+    activity.status = False
     db.commit()
     db.refresh(activity)
 
-    return {"message": "Activity reset to pending", "data": activity}
+    return {
+        "message": "Reset",
+        "data": activity
+    }
 
 
 # =========================
-# 🔄 INITIALIZE ACTIVITIES (VERY IMPORTANT)
+# 🔄 INITIALIZE ACTIVITIES
 # =========================
 @router.post("/initialize/{faculty_id}")
-def initialize_activities(faculty_id: int, db: Session = Depends(get_db)):
-    """
-    👉 Call this after user registration
-    👉 Creates all activities with ❌ status
-    """
+def init_activities(faculty_id: int, db: Session = Depends(get_db)):
     initialize_faculty_activities(db, faculty_id, Activity)
-
-    return {"message": "Activities initialized successfully"}
+    return {"message": "Initialized successfully"}
 
 
 # =========================
-# 📋 GET ALL MODULES & ACTIVITIES
+# 📋 GET ALL MODULES
 # =========================
 @router.get("/all-modules")
-def get_all_modules():
-    """
-    👉 Send to frontend for sidebar generation
-    """
+def modules():
     return ALL_ACTIVITIES
