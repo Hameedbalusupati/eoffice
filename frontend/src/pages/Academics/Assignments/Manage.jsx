@@ -1,24 +1,39 @@
 import { useEffect, useState } from "react";
-import API from "../../../services/api"; // ✅ FIX
-import StatusIcon from "../../../components/StatusIcon";
+import API from "../../../services/api";
+// import StatusIcon from "../../../components/StatusIcon"; ❌ TEMP DISABLE
 
 export default function Manage() {
   const [data, setData] = useState([]);
   const [message, setMessage] = useState("");
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // ✅ SAFE USER FETCH
-  let user = null;
-  try {
-    user = JSON.parse(localStorage.getItem("user") || "null");
-  } catch {
-    console.error("Invalid user in localStorage");
-  }
+  // =========================
+  // 🔐 LOAD USER SAFELY
+  // =========================
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("user");
+
+      if (!raw || raw === "undefined") {
+        setUser(null);
+      } else {
+        const parsed = JSON.parse(raw);
+        setUser(parsed);
+      }
+    } catch {
+      setUser(null);
+    }
+  }, []);
 
   // =========================
   // 🔄 FETCH DATA
   // =========================
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
 
     const fetchData = async () => {
       try {
@@ -26,11 +41,13 @@ export default function Manage() {
         setData(res.data || []);
       } catch (err) {
         console.error("Fetch error:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchData();
-  }, [user?.id]);
+  }, [user]);
 
   // =========================
   // ❌ DELETE
@@ -41,7 +58,6 @@ export default function Manage() {
 
       setMessage("❌ Deleted successfully");
 
-      // 🔄 Refresh
       const res = await API.get(`/academics/faculty/${user?.id}`);
       setData(res.data || []);
     } catch (err) {
@@ -66,7 +82,6 @@ export default function Manage() {
 
       setMessage("✅ Updated successfully");
 
-      // 🔄 Refresh
       const res = await API.get(`/academics/faculty/${user?.id}`);
       setData(res.data || []);
     } catch (err) {
@@ -78,7 +93,14 @@ export default function Manage() {
   // 🚫 NOT LOGGED IN
   // =========================
   if (!user) {
-    return <h2>Please login first</h2>;
+    return <h2 style={{ textAlign: "center" }}>Please login first</h2>;
+  }
+
+  // =========================
+  // ⏳ LOADING
+  // =========================
+  if (loading) {
+    return <h2 style={{ textAlign: "center" }}>Loading...</h2>;
   }
 
   return (
@@ -107,7 +129,8 @@ export default function Manage() {
                 <td>{item.description || "-"}</td>
 
                 <td>
-                  <StatusIcon status={item.status === "completed"} />
+                  {/* SAFE STATUS */}
+                  {item.status === "completed" ? "✅" : "⏳"}
                 </td>
 
                 <td>
@@ -145,18 +168,15 @@ const styles = {
   container: {
     padding: "20px",
   },
-
   table: {
     width: "100%",
     borderCollapse: "collapse",
     marginTop: "20px",
   },
-
   message: {
     marginBottom: "10px",
     fontWeight: "bold",
   },
-
   editBtn: {
     padding: "5px 10px",
     marginRight: "5px",
@@ -165,7 +185,6 @@ const styles = {
     border: "none",
     cursor: "pointer",
   },
-
   deleteBtn: {
     padding: "5px 10px",
     backgroundColor: "#ef4444",

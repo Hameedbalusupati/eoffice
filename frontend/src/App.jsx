@@ -1,52 +1,22 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-
-// COMPONENTS
 import Navbar from "./components/Navbar";
-
-// PAGES
 import Dashboard from "./pages/Dashboard";
 
-// Academics
-import Assign from "./pages/Academics/Assignments/Assign";
-import Manage from "./pages/Academics/Assignments/Manage";
-import Report from "./pages/Academics/Assignments/Report";
-
-// Placements
-import StudentPerformance from "./pages/placements/StudentPerformance";
-
-// =========================
-// 🔐 SAFE USER FUNCTION
-// =========================
+// SAFE USER
 const getUser = () => {
   try {
-    return JSON.parse(localStorage.getItem("user"));
+    const raw = localStorage.getItem("user");
+    if (!raw || raw === "undefined") return null;
+    return JSON.parse(raw);
   } catch {
     return null;
   }
 };
 
-// =========================
-// 🔐 PROTECTED ROUTE
-// =========================
-const ProtectedRoute = ({ children }) => {
-  const user = getUser();
-
-  // Redirect to login if no user
-  if (!user) {
-    return <Navigate to="/" replace />;
-  }
-
-  return children;
-};
-
-// =========================
-// 🚀 APP
-// =========================
 function App() {
   const location = useLocation();
   const user = getUser();
 
-  // Hide navbar only on login page
   const hideNavbar = location.pathname === "/" && !user;
 
   return (
@@ -54,70 +24,17 @@ function App() {
       {!hideNavbar && <Navbar />}
 
       <Routes>
-        {/* ================= LOGIN PAGE ================= */}
         <Route
           path="/"
-          element={
-            user ? (
-              <Navigate to="/dashboard" replace />
-            ) : (
-              <h2 style={{ textAlign: "center", marginTop: "50px" }}>
-                Login Page (Add your login UI here)
-              </h2>
-            )
-          }
+          element={user ? <Navigate to="/dashboard" /> : <Dashboard />}
         />
 
-        {/* ================= DASHBOARD ================= */}
         <Route
           path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
+          element={user ? <Dashboard /> : <Navigate to="/" />}
         />
 
-        {/* ================= ACADEMICS ================= */}
-        <Route
-          path="/academics/assign"
-          element={
-            <ProtectedRoute>
-              <Assign />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/academics/manage"
-          element={
-            <ProtectedRoute>
-              <Manage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/academics/report"
-          element={
-            <ProtectedRoute>
-              <Report />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* ================= PLACEMENTS ================= */}
-        <Route
-          path="/placements/student-performance"
-          element={
-            <ProtectedRoute>
-              <StudentPerformance />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* ================= DEFAULT ================= */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </>
   );

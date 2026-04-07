@@ -4,17 +4,40 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App.jsx";
 import "./index.css";
 
-// Get root element
+// =========================
+// 🛡️ ERROR BOUNDARY
+// =========================
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <h2>Something went wrong ❌</h2>;
+    }
+    return this.props.children;
+  }
+}
+
+// =========================
+// ROOT
+// =========================
 const rootElement = document.getElementById("root");
 
-// Safety check
 if (!rootElement) {
   throw new Error("Root element not found");
 }
 
-// Render React App
 ReactDOM.createRoot(rootElement).render(
-  <BrowserRouter>
-    <App />
-  </BrowserRouter>
+  <ErrorBoundary>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </ErrorBoundary>
 );
